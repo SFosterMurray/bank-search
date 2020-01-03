@@ -1,41 +1,55 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+const path = require('path');
+const express = require('express');
+const app = express();
 
-var indexRouter = require('./routes/index');
+const dotenv = require('dotenv');
+const request = require('request');
 
-var app = express();
 const helmet = require('helmet')
 app.use(helmet());
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'ejs');
-
-app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
+app.use(express.static('public'))
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+// load environment variables from .env file...
+const envpath = path.join(__dirname, '.env.variables');
+dotenv.load({ path: envpath });
+// check the bank information
+//diagnose ('Paris FCU');
+
+app.get('/',(req, res) => {
+    //console.log(req)
+    res.send(`
+    	<div style="text-align: center;">
+    	<img src="logo.png" style="width: 200px;">
+    	</div>
+    	<div>
+    	<h4>Bank-ATM search usage:<br/>
+    	/findBankAtm?lat=48.864716&lng=2.349014&search=Paris FCU<h4>
+    	</div>
+    `)
+})
+
+// make sure the process.env is initialized...
+function diagnose (bank_name) {
+	// key uses '_' not ' '
+	let bank_access=bank_name.replace (' ', '_');
+	console.log ('bank_access = ', bank_access);
+	// find the api key
+	let bank_key = process.env[bank_access + '_key'];
+	console.log ('bank_key = ', bank_key);
+	// find the language
+	let bank_lang = process.env[bank_access + '_lang'];
+	console.log ('bank_lang = ', bank_lang);
+	// find the search type
+	let search_type = process.env[bank_access + '_type'];
+	console.log ('search_type = ', search_type);
+}
+
+// start the server...
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Listening on port`, PORT);
 });
-
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
-
-module.exports = app;
